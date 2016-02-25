@@ -33,15 +33,6 @@ Qed.
 
 Hint Rewrite skipn_nil firstn_nil subslice_nil : subslice.
 
-Ltac dispatch :=
-  intros; cbn in *;
-  autorewrite with subslice in *;
-  auto;
-  try omega.
-
-Ltac induct a :=
-  induction a; dispatch.
-
 Section ReverseDefinition.
 
 Definition subslice' n m l :=
@@ -57,13 +48,24 @@ Qed.
 Theorem subslice'_correct : forall l n m,
   subslice n m l = subslice' n m l.
 Proof.
-  induct l.
-  rewrite subslice'_nil; auto.
+  induction l; intros; cbn; auto.
+  rewrite subslice_nil; rewrite subslice'_nil; auto.
   destruct n, m; cbn; auto.
   apply IHl.
 Qed.
 
 End ReverseDefinition.
+
+Ltac dispatch :=
+  let dispatcher :=
+    (intros; cbn in *; subst;
+    autorewrite with subslice in *;
+    auto;
+    try omega) in
+  dispatcher; try solve [ unfold subslice; dispatcher ].
+
+Ltac induct a :=
+  induction a; dispatch.
 
 Hint Extern 4 (_ <= _) => abstract omega.
 
@@ -71,7 +73,7 @@ Theorem firstn_oob : forall l n,
   n = 0 ->
   firstn n l = [].
 Proof.
-  intros; subst; auto.
+  dispatch.
 Qed.
 
 Theorem skipn_oob : forall l n,
@@ -149,8 +151,8 @@ Proof.
   rewrite firstn_past_end; auto.
 Qed.
 
-Hint Rewrite app_nil_l : subslice.
-Hint Rewrite app_nil_r : subslice.
+Hint Rewrite app_nil_l app_nil_r : subslice.
+Hint Rewrite subslice_prefix subslice_suffix using omega : subslice.
 
 Theorem subslice_combine : forall l n m k,
   n <= k ->
@@ -159,15 +161,15 @@ Theorem subslice_combine : forall l n m k,
 Proof.
   unfold subslice; induct l.
   destruct n, k, m; dispatch.
-  f_equal.
   specialize (IHl 0); cbn in *.
-  eauto.
+  rewrite IHl; auto.
 Qed.
 
-Theorem subslice_combine_all : forall n l,
-  subslice 0 n l ++ subslice n (length l) l = l.
+Theorem subslice_combine_all : forall n m l,
+  m = length l ->
+  subslice 0 n l ++ subslice n m l = l.
 Proof.
-  unfold subslice; intros; cbn.
+  unfold subslice; dispatch; subst.
   rewrite firstn_to_length with (n := length l); auto.
   generalize n.
   induct l; destruct n0; dispatch.
@@ -220,20 +222,23 @@ Proof.
   destruct n, m; dispatch.
 Qed.
 
+Hint Rewrite subslice_combine subslice_combine_all
+  firstn_repeat_outer firstn_repeat_inner
+  skipn_repeat subslice_overlap
+  using omega : subslice.
+
 Lemma firstn_subslice_narrow : forall l n m m',
   m <= m' ->
   subslice n m (firstn m' l) = subslice n m l.
 Proof.
-  unfold subslice; intros.
-  rewrite firstn_repeat_outer by auto; auto.
+  unfold subslice; dispatch.
 Qed.
 
 Lemma firstn_subslice_expand : forall l n m m',
   m > m' ->
   subslice n m (firstn m' l) = subslice n m' l.
 Proof.
-  unfold subslice; intros.
-  rewrite firstn_repeat_inner by auto; auto.
+  unfold subslice; dispatch.
 Qed.
 
 Theorem subslice_repeat_narrow : forall n m n' m' l,
@@ -244,14 +249,12 @@ Proof.
   intros.
   destruct (le_dec n' m'), (le_dec n m);
     repeat rewrite subslice_overlap by omega;
-    auto.
+    dispatch.
   rewrite subslice'_correct with (n := n').
-  unfold subslice at 1.
-  unfold subslice'.
-  rewrite skipn_repeat.
+  unfold subslice, subslice'; dispatch.
   rewrite firstn_skipn_subslice.
   replace (m' - n' + (n' + n)) with (m' + n) by omega.
-  rewrite firstn_subslice_narrow by auto; auto.
+  dispatch.
 Qed.
 
 Theorem subslice_repeat_expand : forall n m n' m' l,
@@ -262,18 +265,14 @@ Proof.
   intros.
   destruct (le_dec n' m'), (le_dec n m);
     repeat rewrite subslice_overlap by omega;
-    auto.
+    dispatch.
   - rewrite subslice'_correct with (n := n').
-    unfold subslice at 1.
-    unfold subslice'.
-    rewrite skipn_repeat.
+    unfold subslice, subslice'; dispatch.
     rewrite firstn_skipn_subslice.
     replace (m' - n' + (n' + n)) with (m' + n) by omega.
-    rewrite firstn_subslice_expand; auto.
-
+    dispatch.
   - repeat rewrite subslice_overlap with (l := l) by omega.
-    rewrite subslice_nil.
-    auto.
+    dispatch.
 Qed.
 
 End Subslicing.
