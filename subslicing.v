@@ -95,26 +95,53 @@ Qed.
 
 Section SubsliceLength.
 
-Theorem skipn_length : forall l n,
+Lemma skipn_length : forall l n,
   length (skipn n l) = length l - n.
 Proof.
   induct l; destruct n; dispatch.
 Qed.
 
-Theorem firstn_length : forall l n,
-  n < length l ->
+Lemma firstn_length : forall l n,
+  n <= length l ->
   length (firstn n l) = n.
 Proof.
   induct l; destruct n; dispatch.
 Qed.
 
+Lemma firstn_length_oob : forall l n,
+  n >= length l ->
+  length (firstn n l) = length l.
+Proof.
+  induct l; destruct n; dispatch.
+Qed.
+
+Hint Rewrite Min.min_l Min.min_r using omega : min.
+
+Corollary firstn_length_min : forall l n,
+  length (firstn n l) = Nat.min n (length l).
+Proof.
+  intros.
+  destruct (le_dec n (length l));
+  autorewrite with min;
+  auto using firstn_length, firstn_length_oob.
+Qed.
+
 Theorem subslice_length : forall n m l,
-  m < length l ->
+  m <= length l ->
   length (subslice n m l) = m - n.
 Proof.
   unfold subslice; intros.
   rewrite skipn_length.
   rewrite firstn_length; auto.
+Qed.
+
+Theorem subslice_length_oob : forall n m l,
+  m >= length l ->
+  length (subslice n m l) = length l - n.
+Proof.
+  unfold subslice; dispatch.
+  rewrite skipn_length.
+  rewrite firstn_length_oob by omega; auto.
 Qed.
 
 End SubsliceLength.
