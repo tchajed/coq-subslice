@@ -359,7 +359,18 @@ Proof.
   induct l.
 Qed.
 
+(* historical note: this theorem was the result of working with
+app_skipn in the context of app_subslice, and realizing that a
+similar combined theorem should apply to firstn as well *)
+Theorem app_firstn : forall l l' n,
+  firstn n (l ++ l') =
+  firstn n l ++ firstn (n - length l) l'.
+Proof.
+  induct l.
+Qed.
+
 Hint Rewrite app_firstn_l app_firstn_r using omega : subslice.
+Hint Rewrite app_firstn : subslice.
 
 Theorem app_subslice_first : forall l' l n m,
   m <= length l ->
@@ -403,18 +414,18 @@ Theorem app_subslice : forall l' l n m,
   subslice n m l ++ subslice (n - length l) (m - length l) l'.
 Proof.
   intros.
+  (* This theorem is actually really easy, but induct l
+     is a bit too eager about rewriting the inductive hypothesis,
+     which is avoided here by using intros.
+
+     Working through the proof does reveal that m <= length l is a
+     special case where the second subslice is nil, reducing to the
+     case proven in app_subslice_first. *)
   destruct (le_dec m (length l)).
-  - rewrite app_subslice_first by auto; dispatch.
-    replace (m - length l) with 0 by omega.
-    dispatch.
   - unfold subslice.
-    apply not_le in n0.
-    generalize dependent m.
-    generalize dependent n.
     induct l.
-    destruct m; dispatch.
-    replace (firstn m l) with l by (now dispatch).
-    destruct n; dispatch.
+  - unfold subslice.
+    induct l.
 Qed.
 
 End Appending.
