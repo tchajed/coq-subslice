@@ -56,16 +56,30 @@ Qed.
 
 End ReverseDefinition.
 
+Ltac inductive_case :=
+    match goal with
+    | [ H: forall _, _ |- _ ] =>
+      rewrite H by (auto; omega)
+    end.
+
 Ltac dispatch :=
   let dispatcher :=
     (intros; cbn in *; subst;
     autorewrite with subslice in *;
+    try inductive_case;
     auto;
     try omega) in
   dispatcher; try solve [ unfold subslice; dispatcher ].
 
 Ltac induct a :=
-  induction a; dispatch.
+  induction a; dispatch;
+    try solve [
+     repeat match goal with
+     | [ |- context[firstn ?n (_ :: _)] ] =>
+      destruct n; dispatch
+     | [ |- context[skipn ?n (_ :: _)] ] =>
+      destruct n; dispatch
+    end ].
 
 Hint Extern 4 (_ <= _) => abstract omega.
 
@@ -81,7 +95,6 @@ Theorem skipn_oob : forall l n,
   skipn n l = [].
 Proof.
   induct l.
-  destruct n; dispatch.
 Qed.
 
 Theorem subslice_oob : forall l n m,
@@ -98,21 +111,21 @@ Section SubsliceLength.
 Lemma skipn_length : forall l n,
   length (skipn n l) = length l - n.
 Proof.
-  induct l; destruct n; dispatch.
+  induct l.
 Qed.
 
 Lemma firstn_length : forall l n,
   n <= length l ->
   length (firstn n l) = n.
 Proof.
-  induct l; destruct n; dispatch.
+  induct l.
 Qed.
 
 Lemma firstn_length_oob : forall l n,
   n >= length l ->
   length (firstn n l) = length l.
 Proof.
-  induct l; destruct n; dispatch.
+  induct l.
 Qed.
 
 Hint Rewrite Min.min_l Min.min_r using omega : min.
@@ -157,24 +170,23 @@ Lemma firstn_past_end : forall n l,
   n >= length l ->
   firstn n l = l.
 Proof.
-  induction n; dispatch.
+  induct n.
   destruct l; dispatch.
   destruct l; dispatch.
-  rewrite IHn; auto.
 Qed.
 
 Corollary firstn_to_length : forall n l,
   n = length l ->
   firstn n l = l.
 Proof.
-  intros; apply firstn_past_end; subst; auto.
+  dispatch; auto using firstn_past_end.
 Qed.
 
 Lemma subslice_suffix : forall n m l,
   m = length l ->
   subslice n m l = skipn n l.
 Proof.
-  unfold subslice; intros; subst; auto.
+  unfold subslice; dispatch.
   rewrite firstn_past_end; auto.
 Qed.
 
@@ -208,8 +220,6 @@ Lemma firstn_repeat_outer : forall l n m,
   firstn n (firstn m l) = firstn n l.
 Proof.
   induct l.
-  destruct n, m; dispatch.
-  rewrite IHl; auto.
 Qed.
 
 Lemma firstn_repeat_inner : forall l n m,
@@ -217,19 +227,15 @@ Lemma firstn_repeat_inner : forall l n m,
   firstn n (firstn m l) = firstn m l.
 Proof.
   induct l.
-  destruct n, m; dispatch.
-  rewrite IHl; auto.
 Qed.
+
+Hint Rewrite <- plus_n_O : subslice.
+Hint Rewrite <- plus_n_Sm : subslice.
 
 Lemma skipn_repeat : forall l n m,
   skipn n (skipn m l) = skipn (n+m) l.
 Proof.
   induct l.
-  destruct m; dispatch.
-  destruct n; dispatch.
-  replace (n+0) with n by omega; auto.
-
-  replace (n + S m) with (S (n+m)) by omega; dispatch.
 Qed.
 
 Lemma firstn_skipn_subslice : forall n m l,
@@ -246,7 +252,6 @@ Lemma subslice_overlap : forall l n m,
   subslice n m l = [].
 Proof.
   unfold subslice; induct l.
-  destruct n, m; dispatch.
 Qed.
 
 Hint Rewrite subslice_combine subslice_combine_all
@@ -258,14 +263,14 @@ Lemma firstn_subslice_narrow : forall l n m m',
   m <= m' ->
   subslice n m (firstn m' l) = subslice n m l.
 Proof.
-  unfold subslice; dispatch.
+  dispatch.
 Qed.
 
 Lemma firstn_subslice_expand : forall l n m m',
   m > m' ->
   subslice n m (firstn m' l) = subslice n m' l.
 Proof.
-  unfold subslice; dispatch.
+  dispatch.
 Qed.
 
 Theorem subslice_repeat_narrow : forall n m n' m' l,
