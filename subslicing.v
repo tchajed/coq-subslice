@@ -56,6 +56,35 @@ Qed.
 
 End ReverseDefinition.
 
+Lemma le_O : forall n,
+  n <= 0 ->
+  n = 0.
+Proof.
+  inversion 1; auto.
+Qed.
+
+Lemma length_O : forall l,
+  length l = 0 ->
+  l = [].
+Proof.
+  destruct l; cbn; intros; auto.
+  omega.
+Qed.
+
+Ltac derive :=
+  repeat match goal with
+  | [ H: ?n <= 0 |- _ ] =>
+    let Heq := constr:(le_O H) in
+    rewrite Heq in *;
+    pose proof Heq;
+    clear H
+  | [ H: length ?l = 0 |- _ ] =>
+    let Heq := constr:(length_O H) in
+    rewrite Heq in *;
+    pose proof Heq;
+    clear H
+  end.
+
 Ltac inductive_case :=
     match goal with
     | [ H: forall _, _ |- _ ] =>
@@ -66,10 +95,11 @@ Ltac dispatch :=
   let dispatcher :=
     (intros; cbn in *; subst;
     autorewrite with subslice in *;
+    derive;
     try inductive_case;
     auto;
     try omega) in
-  dispatcher; try solve [ unfold subslice; dispatcher ].
+  repeat dispatcher; try solve [ unfold subslice; dispatcher ].
 
 Ltac induct a :=
   induction a; dispatch;
@@ -191,6 +221,7 @@ Proof.
 Qed.
 
 Hint Rewrite app_nil_l app_nil_r : subslice.
+Hint Rewrite firstn_past_end using omega : subslice.
 Hint Rewrite subslice_prefix subslice_suffix using omega : subslice.
 
 Lemma firstn_repeat_outer : forall l n m,
@@ -207,8 +238,15 @@ Proof.
   induct l.
 Qed.
 
-Hint Rewrite <- plus_n_O : subslice.
-Hint Rewrite <- plus_n_Sm : subslice.
+Lemma minus_underflow : forall n m,
+  n <= m ->
+  n - m = 0.
+Proof.
+  intros; omega.
+Qed.
+
+Hint Rewrite Nat.add_0_r Nat.sub_0_r Nat.add_succ_r: subslice.
+Hint Rewrite minus_underflow using omega : subslice.
 
 Lemma skipn_repeat : forall l n m,
   skipn n (skipn m l) = skipn (n+m) l.
@@ -307,25 +345,76 @@ Proof.
   induct l.
 Qed.
 
-Lemma app_firstn : forall l l' n,
+Lemma app_firstn_l : forall l l' n,
   n <= length l ->
   firstn n (l ++ l') = firstn n l.
 Proof.
   induct l.
-  inversion H; auto.
 Qed.
+
+Lemma app_firstn_r : forall l l' n,
+  n >= length l ->
+  firstn n (l ++ l') = l ++ (firstn (n - length l) l').
+Proof.
+  induct l.
+Qed.
+
+Hint Rewrite app_firstn_l app_firstn_r using omega : subslice.
 
 Theorem app_subslice_first : forall l' l n m,
   m <= length l ->
   subslice n m (l ++ l') = subslice n m l.
 Proof.
-  unfold subslice at 1.
+  unfold subslice.
   induct l.
-  inversion H; dispatch.
-  destruct m; dispatch.
-  destruct n; dispatch.
-  specialize (IHl 0); cbn in *.
-  rewrite IHl; auto.
+Qed.
+
+Lemma app_skipn_l : forall l l' n,
+  n <= length l ->
+  skipn n (l ++ l') =
+  skipn n l ++ l'.
+Proof.
+  induct l.
+Qed.
+
+Lemma app_skipn_r : forall l l' n,
+  n > length l ->
+  skipn n (l ++ l') =
+  skipn (n - length l) l'.
+Proof.
+  induct l.
+Qed.
+
+(* historical note: this theorem was written
+as a result of debugging the statements of
+app_skipn_l and app_skipn_r *)
+Theorem app_skipn : forall l l' n,
+  skipn n (l ++ l') =
+  skipn n l ++ skipn (n - length l) l'.
+Proof.
+  induct l.
+Qed.
+
+Hint Rewrite app_skipn_l app_skipn_r using omega : subslice.
+Hint Rewrite app_skipn : subslice.
+
+Theorem app_subslice : forall l' l n m,
+  subslice n m (l ++ l') =
+  subslice n m l ++ subslice (n - length l) (m - length l) l'.
+Proof.
+  intros.
+  destruct (le_dec m (length l)).
+  - rewrite app_subslice_first by auto; dispatch.
+    replace (m - length l) with 0 by omega.
+    dispatch.
+  - unfold subslice.
+    apply not_le in n0.
+    generalize dependent m.
+    generalize dependent n.
+    induct l.
+    destruct m; dispatch.
+    replace (firstn m l) with l by (now dispatch).
+    destruct n; dispatch.
 Qed.
 
 End Appending.
