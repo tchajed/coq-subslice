@@ -193,28 +193,6 @@ Qed.
 Hint Rewrite app_nil_l app_nil_r : subslice.
 Hint Rewrite subslice_prefix subslice_suffix using omega : subslice.
 
-Theorem subslice_combine : forall l n m k,
-  n <= k ->
-  k <= m ->
-  subslice n k l ++ subslice k m l = subslice n m l.
-Proof.
-  unfold subslice; induct l.
-  destruct n, k, m; dispatch.
-  specialize (IHl 0); cbn in *.
-  rewrite IHl; auto.
-Qed.
-
-Theorem subslice_combine_all : forall n m l,
-  m = length l ->
-  subslice 0 n l ++ subslice n m l = l.
-Proof.
-  unfold subslice; dispatch; subst.
-  rewrite firstn_to_length with (n := length l); auto.
-  generalize n.
-  induct l; destruct n0; dispatch.
-  rewrite IHl; auto.
-Qed.
-
 Lemma firstn_repeat_outer : forall l n m,
   n <= m ->
   firstn n (firstn m l) = firstn n l.
@@ -254,8 +232,7 @@ Proof.
   unfold subslice; induct l.
 Qed.
 
-Hint Rewrite subslice_combine subslice_combine_all
-  firstn_repeat_outer firstn_repeat_inner
+Hint Rewrite firstn_repeat_outer firstn_repeat_inner
   skipn_repeat subslice_overlap
   using omega : subslice.
 
@@ -306,6 +283,52 @@ Proof.
   - repeat rewrite subslice_overlap with (l := l) by omega.
     dispatch.
 Qed.
+
+Section Appending.
+
+Theorem subslice_combine : forall l n m k,
+  n <= k ->
+  k <= m ->
+  subslice n k l ++ subslice k m l = subslice n m l.
+Proof.
+  unfold subslice; induct l.
+  destruct n, k, m; dispatch.
+  specialize (IHl 0); cbn in *.
+  rewrite IHl; auto.
+Qed.
+
+Theorem subslice_combine_all : forall n m l,
+  m = length l ->
+  subslice 0 n l ++ subslice n m l = l.
+Proof.
+  unfold subslice; dispatch; subst.
+  rewrite firstn_to_length with (n := length l); auto.
+  generalize n.
+  induct l.
+Qed.
+
+Lemma app_firstn : forall l l' n,
+  n <= length l ->
+  firstn n (l ++ l') = firstn n l.
+Proof.
+  induct l.
+  inversion H; auto.
+Qed.
+
+Theorem app_subslice_first : forall l' l n m,
+  m <= length l ->
+  subslice n m (l ++ l') = subslice n m l.
+Proof.
+  unfold subslice at 1.
+  induct l.
+  inversion H; dispatch.
+  destruct m; dispatch.
+  destruct n; dispatch.
+  specialize (IHl 0); cbn in *.
+  rewrite IHl; auto.
+Qed.
+
+End Appending.
 
 End Subslicing.
 
