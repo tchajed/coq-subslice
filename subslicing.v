@@ -322,6 +322,23 @@ Proof.
     dispatch.
 Qed.
 
+Corollary subslice_repeat : forall n m n' m' l,
+  subslice n' m' (subslice n m l) =
+  subslice (n'+n) (Nat.min m (m'+n)) l.
+Proof.
+  intros.
+  match goal with
+  | [ |- context[Nat.min ?a ?b] ] =>
+    destruct (Min.min_spec a b)
+  end; intuition;
+  match goal with
+  | [ H: Nat.min _ _ = _ |- _ ] =>
+    rewrite H
+  end;
+  auto using subslice_repeat_expand,
+    subslice_repeat_narrow.
+Qed.
+
 Section Appending.
 
 Theorem subslice_combine : forall l n m k,
