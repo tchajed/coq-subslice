@@ -12,6 +12,7 @@ env:
     - OPAM_VERSION=2.0.0
   env:
     - COQ_VERSION=master
+    - COQ_VERSION=v8.8
 
 install:
   - opam pin add -y coq "https://github.com/coq/coq.git#$COQ_VERSION"
