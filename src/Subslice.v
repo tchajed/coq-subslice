@@ -111,7 +111,7 @@ Ltac induct a :=
       destruct n; dispatch
     end ].
 
-Hint Extern 4 (_ <= _) => abstract omega.
+Hint Extern 4 (_ <= _) => abstract omega : core.
 
 Theorem firstn_oob : forall l n,
   n = 0 ->
