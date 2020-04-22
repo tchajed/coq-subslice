@@ -1,6 +1,8 @@
-Require Import Omega.
-Require Import List.
+From Coq Require Import Lia.
+From Coq Require Import PeanoNat.
+From Coq Require Import List.
 Import ListNotations.
+Import Compare_dec.
 
 Set Implicit Arguments.
 
@@ -68,7 +70,7 @@ Lemma length_O : forall l,
   l = [].
 Proof.
   destruct l; cbn; intros; auto.
-  omega.
+  lia.
 Qed.
 
 Ltac derive :=
@@ -88,7 +90,7 @@ Ltac derive :=
 Ltac inductive_case :=
     match goal with
     | [ H: forall _, _ |- _ ] =>
-      rewrite H by (auto; omega)
+      rewrite H by (auto; lia)
     end.
 
 Ltac dispatch :=
@@ -98,7 +100,7 @@ Ltac dispatch :=
     derive;
     try inductive_case;
     auto;
-    try omega) in
+    try lia) in
   repeat dispatcher; try solve [ unfold subslice; dispatcher ].
 
 Ltac induct a :=
@@ -111,7 +113,7 @@ Ltac induct a :=
       destruct n; dispatch
     end ].
 
-Hint Extern 4 (_ <= _) => abstract omega : core.
+Hint Extern 4 (_ <= _) => abstract lia : core.
 
 Theorem firstn_oob : forall l n,
   n = 0 ->
@@ -132,7 +134,7 @@ Theorem subslice_oob : forall l n m,
   subslice n m l = [].
 Proof.
   intros; rewrite subslice'_correct; unfold subslice'.
-  replace (m - n) with 0 by omega.
+  replace (m - n) with 0 by lia.
   auto.
 Qed.
 
@@ -158,7 +160,7 @@ Proof.
   induct l.
 Qed.
 
-Hint Rewrite Min.min_l Min.min_r using omega : min.
+Hint Rewrite Min.min_l Min.min_r using lia : min.
 
 Corollary firstn_length_min : forall l n,
   length (firstn n l) = Nat.min n (length l).
@@ -184,7 +186,7 @@ Theorem subslice_length_oob : forall n m l,
 Proof.
   unfold subslice; dispatch.
   rewrite skipn_length.
-  rewrite firstn_length_oob by omega; auto.
+  rewrite firstn_length_oob by lia; auto.
 Qed.
 
 End SubsliceLength.
@@ -221,8 +223,8 @@ Proof.
 Qed.
 
 Hint Rewrite app_nil_l app_nil_r : subslice.
-Hint Rewrite firstn_past_end using omega : subslice.
-Hint Rewrite subslice_prefix subslice_suffix using omega : subslice.
+Hint Rewrite firstn_past_end using lia : subslice.
+Hint Rewrite subslice_prefix subslice_suffix using lia : subslice.
 
 Lemma firstn_repeat_outer : forall l n m,
   n <= m ->
@@ -242,11 +244,11 @@ Lemma minus_underflow : forall n m,
   n <= m ->
   n - m = 0.
 Proof.
-  intros; omega.
+  intros; lia.
 Qed.
 
 Hint Rewrite Nat.add_0_r Nat.sub_0_r Nat.add_succ_r: subslice.
-Hint Rewrite minus_underflow using omega : subslice.
+Hint Rewrite minus_underflow using lia : subslice.
 
 Lemma skipn_repeat : forall l n m,
   skipn n (skipn m l) = skipn (n+m) l.
@@ -259,7 +261,7 @@ Lemma firstn_skipn_subslice : forall n m l,
 Proof.
   intros.
   rewrite subslice'_correct; unfold subslice'.
-  replace (m + n - n) with m by omega.
+  replace (m + n - n) with m by lia.
   auto.
 Qed.
 
@@ -272,7 +274,7 @@ Qed.
 
 Hint Rewrite firstn_repeat_outer firstn_repeat_inner
   skipn_repeat subslice_overlap
-  using omega : subslice.
+  using lia : subslice.
 
 Lemma firstn_subslice_narrow : forall l n m m',
   m <= m' ->
@@ -295,12 +297,12 @@ Theorem subslice_repeat_narrow : forall n m n' m' l,
 Proof.
   intros.
   destruct (le_dec n' m'), (le_dec n m);
-    repeat rewrite subslice_overlap by omega;
+    repeat rewrite subslice_overlap by lia;
     dispatch.
   rewrite subslice'_correct with (n := n').
   unfold subslice, subslice'; dispatch.
   rewrite firstn_skipn_subslice.
-  replace (m' - n' + (n' + n)) with (m' + n) by omega.
+  replace (m' - n' + (n' + n)) with (m' + n) by lia.
   dispatch.
 Qed.
 
@@ -311,14 +313,14 @@ Theorem subslice_repeat_expand : forall n m n' m' l,
 Proof.
   intros.
   destruct (le_dec n' m'), (le_dec n m);
-    repeat rewrite subslice_overlap by omega;
+    repeat rewrite subslice_overlap by lia;
     dispatch.
   - rewrite subslice'_correct with (n := n').
     unfold subslice, subslice'; dispatch.
     rewrite firstn_skipn_subslice.
-    replace (m' - n' + (n' + n)) with (m' + n) by omega.
+    replace (m' - n' + (n' + n)) with (m' + n) by lia.
     dispatch.
-  - repeat rewrite subslice_overlap with (l := l) by omega.
+  - repeat rewrite subslice_overlap with (l := l) by lia.
     dispatch.
 Qed.
 
@@ -386,7 +388,7 @@ Proof.
   induct l.
 Qed.
 
-Hint Rewrite app_firstn_l app_firstn_r using omega : subslice.
+Hint Rewrite app_firstn_l app_firstn_r using lia : subslice.
 Hint Rewrite app_firstn : subslice.
 
 Theorem app_subslice_first : forall l' l n m,
@@ -423,7 +425,7 @@ Proof.
   induct l.
 Qed.
 
-Hint Rewrite app_skipn_l app_skipn_r using omega : subslice.
+Hint Rewrite app_skipn_l app_skipn_r using lia : subslice.
 Hint Rewrite app_skipn : subslice.
 
 Theorem app_subslice : forall l' l n m,
