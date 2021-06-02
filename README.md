@@ -1,5 +1,7 @@
 # subslice
 
+[![CI](https://github.com/tchajed/coq-subslice/actions/workflows/coq-action.yml/badge.svg)](https://github.com/tchajed/coq-subslice/actions/workflows/coq-action.yml)
+
 [![Build Status](https://travis-ci.org/tchajed/coq-subslice.svg?branch=master)](https://travis-ci.org/tchajed/coq-subslice)
 
 A Coq implementation of subslicing of lists. We implement a function `subslice` with the behavior of array indexing in both Python and Go, for example (with syntax `a[n:m]` in those languages). Subslicing is a generalization of the standard library `firstn` and `skipn` list operations, and is internally implemented with these functions.
