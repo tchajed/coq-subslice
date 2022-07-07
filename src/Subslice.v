@@ -5,6 +5,7 @@ Import ListNotations.
 Import Compare_dec.
 
 Set Implicit Arguments.
+Set Default Proof Using "Type".
 
 Section Subslicing.
 
@@ -160,7 +161,7 @@ Proof.
   induct l.
 Qed.
 
-Hint Rewrite Min.min_l Min.min_r using lia : min.
+Hint Rewrite Nat.min_l Nat.min_r using lia : min.
 
 Corollary firstn_length_min : forall l n,
   length (firstn n l) = Nat.min n (length l).
@@ -331,7 +332,7 @@ Proof.
   intros.
   match goal with
   | [ |- context[Nat.min ?a ?b] ] =>
-    destruct (Min.min_spec a b)
+    destruct (Nat.min_spec a b)
   end; intuition;
   match goal with
   | [ H: Nat.min _ _ = _ |- _ ] =>
