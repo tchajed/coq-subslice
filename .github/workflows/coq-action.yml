@@ -10,6 +10,7 @@ on:
   schedule:
     # Tuesday 8am UTC (3am EST)
     - cron: '0 8 * * TUE'
+  workflow_dispatch:
 
 
 jobs:
